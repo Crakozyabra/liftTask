@@ -10,11 +10,4 @@ public class Man {
         return targetFloor-factFloor == 0 ? Direction.NONE : (targetFloor-factFloor > 0 ? Direction.UP : Direction.DOWN);
     }
 
-
-
-
-
-
-
-
 }
