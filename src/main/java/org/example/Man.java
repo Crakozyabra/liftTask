@@ -1,7 +1,13 @@
 package org.example;
 
 public class Man {
-    long targetFloor;
+
+    private long targetFloor;
+
+    public long getTargetFloor() {
+        return targetFloor;
+    }
+
     public Man(long targetFloor) {
         this.targetFloor = targetFloor;
     }

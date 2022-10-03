@@ -7,16 +7,11 @@ import java.util.List;
 
 public class Building {
 
-    private Lift lift;
-    public List<Man> getMenInTheLift() {
-        return lift.menInTheLift;
-    }
-    public void setLift(Lift lift) {
-        this.lift = lift;
-    }
 
-    private List<Floor> floors;
-    private long floorsCount;
+
+    private final Lift lift;
+    private final List<Floor> floors;
+    private final long floorsCount;
 
 
     public Building() {
@@ -25,21 +20,28 @@ public class Building {
         System.out.println("Floor counts in building is: " + this.floorsCount);
         System.out.println();
         for (int i = 0; i < floorsCount; i++) {
-            floors.add(new Floor());
+            floors.add(new Floor(i+1));
         }
-
         this.lift = new Lift();
     }
 
-
-    private void printPassengersOnTheFloor(int factFloorNumber, String message){
-        Floor floor = floors.get(factFloorNumber - 1);
-        System.out.println();
-        System.out.println(message + " " + factFloorNumber + " floor:");
-        for (Man man:floor.menOnTheFloor) {
-            System.out.println("Man on the floor: target floor = " + man.targetFloor + "; fact floor = " + factFloorNumber + "; direction = " + man.getTargetDirectionInBuilding(factFloorNumber));
-        }
+    public int getCurrentLiftFloorNumber() {
+        return lift.currentFloorNumber;
     }
+
+    public List<Man> getMenOnTheFloor(int floorNumber){
+        Floor floor = this.floors.get(floorNumber - 1);
+        return floor.getMenOnTheFloor();
+    }
+
+    public Direction getLiftDirection(){
+        return lift.getLiftDirection();
+    }
+
+    public List<Man> getMenInTheLift(){
+        return lift.getMenInTheLift();
+    }
+
 
 
     public void runLiftMoving() {
@@ -47,17 +49,20 @@ public class Building {
 
         // цикл для перемещения лифта по этажам
         while (true) {
-            lift.delayOnTheFloor(1000); // остановка лифта на этаже
 
-            this.passengersGetOutOnTheFloorFromTheLift(factFloorNumber); // пассажиры, если есть, выходят из лифта на этаж
+            lift.setCurrentFloorNumber(factFloorNumber); // лифт остановился на этаже
 
-            printPassengersOnTheFloor(factFloorNumber, "Men on the floor after lift come in"); // печать в консоль пассажиров на этаже до посадки в лифт
+            lift.delayOnTheFloor(1000); // время остановки лифта на этаже
+
+            this.passengersGetOutOnTheFloorFromTheLift(factFloorNumber); // пассажиры, если есть и нужно, выходят из лифта на этаж
+
+            PrintHelper.printMenOnTheFloorInBuilding(this, factFloorNumber, "Men on the floor after lift come in"); // печать в консоль пассажиров на этаже до посадки в лифт
 
             this.passengerGetOnTheLiftFromTheFloor(factFloorNumber); // пассажиры заходят c этажа в лифт
 
-            printPassengersOnTheFloor(factFloorNumber, "Men on the floor before lift come in"); // печать в консоль пассажиров на этаже после посадки в лифт
+            PrintHelper.printMenOnTheFloorInBuilding(this, factFloorNumber, "Men on the floor before lift come in"); // печать в консоль пассажиров на этаже после посадки в лифт
 
-            lift.printMenInTheLift(factFloorNumber); // печать в консоль о пассажирах в лифте
+            PrintHelper.printMenInTheLiftInBuilding(this); // печать в консоль о пассажирах в лифте
 
             factFloorNumber = this.moveLift(factFloorNumber); // лифт двигается
         }
@@ -115,16 +120,26 @@ public class Building {
 
 
 
-    private class Lift{
-        public void delayOnTheFloor(long milliseconds){
-            try {
-                Thread.sleep(milliseconds);
-            } catch (InterruptedException e) {}
+     private class Lift{
+        private Direction liftMoveDirection;
+        private int currentFloorNumber;
+
+        public int getCurrentFloorNumber() {
+            return currentFloorNumber;
         }
 
-        Direction liftMoveDirection;
+        public void setCurrentFloorNumber(int currentFloorNumber) {
+            this.currentFloorNumber = currentFloorNumber;
+        }
 
-        private List<Man> menInTheLift = new ArrayList();
+        private final List<Man> menInTheLift = new ArrayList<>();
+        public List<Man> getMenInTheLift() {return menInTheLift;}
+
+        public void delayOnTheFloor(long milliseconds){
+             try {
+                 Thread.sleep(milliseconds);
+             } catch (InterruptedException e) {}
+         }
 
         public Direction getLiftDirection() {
             return liftMoveDirection;
@@ -142,21 +157,9 @@ public class Building {
             liftMoveDirection = upDirection-downDirection == 0 ? Direction.NONE : (upDirection-downDirection > 0 ? Direction.UP : Direction.DOWN);
         }
 
-        public void printMenInTheLift(int floorNumber){
-            System.out.println();
-            System.out.println("Lift: floor № = " + floorNumber + "; direction = " + lift.getLiftDirection());
-            System.out.println("-----------------------------------");
-            for (Man man:lift.menInTheLift) {
-                System.out.println("Man on the lift: target floor = " + man.targetFloor);
-            }
-            System.out.println();
-            System.out.println();
-        }
-
         public Lift() {
             liftMoveDirection = Direction.NONE;
         }
-
 
         // пассажиры, чей этаж, выходят из лифта
         public List<Man> passengerWhoNeedGetOffTheLift(long factFloor){
@@ -186,12 +189,22 @@ public class Building {
 
 
     private class Floor{
+        private int floorNumber;
         private Direction upButton;
         private Direction downButton;
         private long menCount;
         private List<Man> menOnTheFloor;
 
-        public Floor(){
+        public List<Man> getMenOnTheFloor() {
+            return menOnTheFloor;
+        }
+
+        public int getFloorNumber() {
+            return floorNumber;
+        }
+
+        public Floor(int floorNumber){
+            floorNumber = floorNumber;
             upButton = Direction.NONE;
             downButton = Direction.NONE;
             menCount = Math.round(Math.random()*10);
@@ -205,7 +218,7 @@ public class Building {
         public void printMenOnTheFloor(int floorNumber){
             System.out.println("Men on the " + floorNumber + " floor");
             for (Man man:this.menOnTheFloor) {
-                System.out.println("Man" + man.targetFloor);
+                System.out.println("Man" + man.getTargetFloor());
             }
             System.out.println();
         }
